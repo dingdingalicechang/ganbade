@@ -1,108 +1,139 @@
 from GreenRestaurantData import GreenRestaurant
 import tkinter as tk
 from tkinter import ttk
-from PIL import Image,ImageTk
+from PIL import Image, ImageTk
 import datetime
-from tkinter.simpledialog import askinteger
 
 class Window(tk.Tk):
     def __init__(self):
         super().__init__()
-        #main Frame
+        #mainFrame
         mainFrame = ttk.Frame(self)
-        mainFrame.pack(padx=30,pady=50)
+        mainFrame.pack(padx=50,pady=50)
 
-        #logoLabel top of top_wrapperFrame       
-        logoImage = Image.open('./logo.png')
-        resizeImage = logoImage.resize((1200,230),Image.LANCZOS)
+
+        #logoLabel      
+        logoImage = Image.open('./logo2.png')
+        resizeImage = logoImage.resize((1000,230),Image.LANCZOS)
         self.logoTkimage = ImageTk.PhotoImage(resizeImage)
         logoLabel = ttk.Label(mainFrame,image=self.logoTkimage)
-        logoLabel.pack(pady=(0,30))
+        logoLabel.pack(pady=(0,20))
 
-        #top_wrapperFrame=================
+
+        #搜尋框
+        searchFrame = ttk.Frame(mainFrame)
+        searchFrame.pack(fill=tk.X, pady=10)
+        ttk.Label(searchFrame, text="搜尋關鍵字：").grid(pady=5, row=0, column=0)
+        self.searchKeyEntry = tk.StringVar()
+        self.infolist = GreenRestaurant.greenRestaurantInfo()
+        self.searchEntry = ttk.Entry(searchFrame , width=40, textvariable=self.searchKeyEntry)
+        self.searchEntry.grid(row=0, column=1)
+        self.searchButton = ttk.Button(searchFrame, text="GO!",command=self.searchWords)
+        self.searchButton.grid(row=0, column=2)
+
+
+        #top_wrapperFrame
         top_wrapperFrame = ttk.Frame(mainFrame)
         top_wrapperFrame.pack(fill=tk.X)
 
+
+        #topFrame縣市選單框
+        topFrame = ttk.LabelFrame(top_wrapperFrame,text="縣市")
         self.infolist = GreenRestaurant.greenRestaurantInfo()
-        length = len(self.infolist)
-        
-        unique_addrs = set([i.address[3:6] for i in self.infolist])
-
-        topFrame = ttk.LabelFrame(top_wrapperFrame,text="台北市行政區")
-
-        # create a list to store all the districts
-        '''
-        districts = []
-        for info in self.infolist:
-            district = info.address[:6]
-        districts.append(district)
-        '''
-
-        districts = []
-        for info in self.infolist:
-            district = info.address[3:6]
-            districts.append(district)
-        unique_districts = sorted(list(set(districts)))
-        print(unique_districts)
-
-
-        # use set() to remove duplicates and create a list of unique districts
-        unique_districts = list(set(districts))
-
-        # create radiobuttons for each unique district
         self.radioStringVar = tk.StringVar()
-        for i, district in enumerate(unique_districts):
-            cols = i % 10
-            rows = i // 10            
-            ttk.Radiobutton(topFrame,text=district, value=district, variable=self.radioStringVar).grid(column=cols, row=rows, sticky=tk.W, padx=10, pady=10)
+        list000 = []
+        for info in self.infolist:
+            address3 = info.city
+            list000.append(address3)
+        uniquecity = sorted(list(set(list000)))
+        for i, address3 in enumerate(uniquecity):
+            cols = i % 12
+            rows = i // 12    
+            ttk.Radiobutton(topFrame,text=address3, value=address3, variable=self.radioStringVar,command=self.radioEvent).grid(column=cols,row=rows,sticky=tk.W,padx=10,pady=10)           
+        topFrame.pack(pady=(20,20))
 
-        topFrame.pack(side=tk.LEFT)
-        self.radioStringVar.set('信義區')
+
+        #bottomFrame資料顯示框
+        now = datetime.datetime.now()
+        nowString = now.strftime("%Y-%m-%d %H:%M:%S")
+        self.bottomFrame = ttk.LabelFrame(mainFrame,text=f"查詢時間\t{nowString}")
+        self.bottomFrame.pack(pady=(20,20))
+
+        columns = ('#1', '#2', '#3', '#4')
+        self.tree = ttk.Treeview(self.bottomFrame, columns=columns, show='headings')
+        self.tree.heading('#1', text='餐廳名稱')
+        self.tree.column("#1", minwidth=0, width=280)
+        self.tree.heading('#2', text='餐廳電話(室內)')
+        self.tree.column("#2", minwidth=0, width=150)
+        self.tree.heading('#3', text='餐廳電話(手機)')
+        self.tree.column("#3", minwidth=0, width=100)
+        self.tree.heading('#4', text='餐廳地址')
+        self.tree.column("#4", minwidth=0, width=470)
+        self.tree.pack(side=tk.LEFT)
+
+
+        #self.tree, addItem
+        for item in self.infolist:
+            self.tree.insert('',tk.END,values=[item.name,item.phone,item.mobile,item.address],tags=item.city)
+
+
+        #self.tree bind event
+        self.tree.bind('<<TreeviewSelect>>',self.treeSelected)
+
+
+        #幫treeview加scrollbar
+        scrollbar = ttk.Scrollbar(self.bottomFrame,command=self.tree.yview)
+        scrollbar.pack(side=tk.RIGHT,fill=tk.Y)
+        self.tree.config(yscrollcommand=scrollbar.set)
+
+
+    def treeSelected(self,event):
+        selectedTree = event.widget
+        if len(selectedTree.selection()) == 0 : return
+        itemTag = selectedTree.selection()
+        itemDic = selectedTree.item(itemTag)
+        siteName = itemDic['tags']
+        for item in self.infolist:
+            if siteName == item.city:
+                break
+
+
+    def searchWords(self):
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        for item in self.infolist:
+            if self.searchKeyEntry.get() in item.name or self.searchKeyEntry.get() in item.address:
+                self.tree.insert('',tk.END,values=[item.name,item.phone,item.mobile,item.address],tags=item.city)
 
 
 
-        '''
-        #topFrame_start===================
-        topFrame = ttk.LabelFrame(top_wrapperFrame,text="台北市行政區")
-        '''
-        '''
-        self.infolist = GreenRestaurant.greenRestaurantInfo()
-        length = len(self.infolist)
-        '''
-        '''
-        self.radioStringVar = tk.StringVar()
-        for i in range(length):
-            cols = i % 10
-            rows = i // 5            
-            ttk.Radiobutton(topFrame,text=self.infolist[i].address[3:6] ,value=self.infolist[i].address[3:6],variable=self.radioStringVar).grid(column=cols,row=rows,sticky=tk.W,padx=10,pady=10)
-        topFrame.pack(side=tk.LEFT)
-        self.radioStringVar.set('信義區')
-        '''
 
+    def radioEvent(self):
         #get current datetime
         now = datetime.datetime.now()
         #display current datetime
         nowString = now.strftime("%Y-%m-%d %H:%M:%S")
-        self.bottomFrame = ttk.LabelFrame(mainFrame,text=f"查詢時間\t{nowString}")
-        self.bottomFrame.pack()
-
-        columns = ('#1', '#2', '#3')
-        self.tree = ttk.Treeview(self.bottomFrame, columns=columns, show='headings')
-        self.tree.heading('#1', text='餐廳名稱')
-        self.tree.column("#1", minwidth=0, width=200)
-        self.tree.heading('#2', text='餐廳電話')
-        self.tree.column("#2", minwidth=0, width=150)
-        self.tree.heading('#3', text='餐廳地址')
-        self.tree.column("#3", minwidth=0, width=500)
-        self.tree.pack(side=tk.LEFT)
+        # Clear tree view
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        # Get selected radio button value
+        cityName = self.radioStringVar.get()  
+        self.bottomFrame.config(text=f"【{cityName}】查詢時間\t{nowString}")      
+        # Get all station data from selected area
+        restaurantlist = [item for item in self.infolist if item.city == cityName]
+        # Display data in tree view
+        for item in restaurantlist:
+            self.tree.insert('',tk.END,values=[item.name,item.phone,item.mobile,item.address],tags=item.city)
 
 
 
 def main():
     window = Window()
-    window.title("臺北市綠色餐廳資訊")
+    window.title("綠色餐廳")
+    Image.open("./icon.png").save("icon.ico")
+    window.iconbitmap('icon.ico')
     window.mainloop()
-    
+
 
 if __name__ == "__main__":
     main()
