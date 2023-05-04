@@ -4,16 +4,17 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 import datetime
 
+
 class Window(tk.Tk):
-    def __init__(self):
-        super().__init__()
+    def __init__(self,**kwargs):
+        super().__init__(**kwargs)
         #mainFrame
         mainFrame = ttk.Frame(self)
         mainFrame.pack(padx=50,pady=50)
 
 
         #logoLabel      
-        logoImage = Image.open('./logo2.png')
+        logoImage = Image.open('./logo.png')
         resizeImage = logoImage.resize((1000,230),Image.LANCZOS)
         self.logoTkimage = ImageTk.PhotoImage(resizeImage)
         logoLabel = ttk.Label(mainFrame,image=self.logoTkimage)
@@ -22,8 +23,8 @@ class Window(tk.Tk):
 
         #搜尋框
         searchFrame = ttk.Frame(mainFrame)
-        searchFrame.pack(fill=tk.X, pady=10)
-        ttk.Label(searchFrame, text="搜尋關鍵字：").grid(pady=5, row=0, column=0)
+        searchFrame.pack(fill=tk.X, padx=36 ,pady=10)
+        ttk.Label(searchFrame, text="搜尋關鍵字(餐廳名稱或地址)：").grid(pady=5, row=0, column=0)
         self.searchKeyEntry = tk.StringVar()
         self.infolist = GreenRestaurant.greenRestaurantInfo()
         self.searchEntry = ttk.Entry(searchFrame , width=40, textvariable=self.searchKeyEntry)
@@ -32,13 +33,13 @@ class Window(tk.Tk):
         self.searchButton.grid(row=0, column=2)
 
 
-        #top_wrapperFrame
-        top_wrapperFrame = ttk.Frame(mainFrame)
-        top_wrapperFrame.pack(fill=tk.X)
+        #topWrapperFrame
+        topWrapperFrame = ttk.Frame(mainFrame)
+        topWrapperFrame.pack(fill=tk.X)
 
 
         #topFrame縣市選單框
-        topFrame = ttk.LabelFrame(top_wrapperFrame,text="縣市")
+        topFrame = ttk.LabelFrame(topWrapperFrame,text="依縣市查詢")
         self.infolist = GreenRestaurant.greenRestaurantInfo()
         self.radioStringVar = tk.StringVar()
         list000 = []
@@ -71,7 +72,6 @@ class Window(tk.Tk):
         self.tree.column("#4", minwidth=0, width=470)
         self.tree.pack(side=tk.LEFT)
 
-
         #self.tree, addItem
         for item in self.infolist:
             self.tree.insert('',tk.END,values=[item.name,item.phone,item.mobile,item.address],tags=item.city)
@@ -98,30 +98,34 @@ class Window(tk.Tk):
                 break
 
 
+
     def searchWords(self):
+        #顯示搜尋的時間
+        now = datetime.datetime.now()
+        nowString = now.strftime("%Y-%m-%d %H:%M:%S")
+        self.bottomFrame.config(text=f"查詢時間\t{nowString}")
+        #清除前一個顯示畫面
         for item in self.tree.get_children():
             self.tree.delete(item)
+        #在tree view顯示搜尋後的餐廳列表
         for item in self.infolist:
             if self.searchKeyEntry.get() in item.name or self.searchKeyEntry.get() in item.address:
                 self.tree.insert('',tk.END,values=[item.name,item.phone,item.mobile,item.address],tags=item.city)
 
 
 
-
     def radioEvent(self):
-        #get current datetime
+        #顯示點選的時間
         now = datetime.datetime.now()
-        #display current datetime
         nowString = now.strftime("%Y-%m-%d %H:%M:%S")
-        # Clear tree view
+        self.bottomFrame.config(text=f"查詢時間\t{nowString}")
+        #清除前一個顯示畫面
         for item in self.tree.get_children():
             self.tree.delete(item)
-        # Get selected radio button value
-        cityName = self.radioStringVar.get()  
-        self.bottomFrame.config(text=f"【{cityName}】查詢時間\t{nowString}")      
-        # Get all station data from selected area
+        #依選擇的縣市顯示餐廳列表
+        cityName = self.radioStringVar.get()       
         restaurantlist = [item for item in self.infolist if item.city == cityName]
-        # Display data in tree view
+        #在tree view顯示點選後的餐廳列表
         for item in restaurantlist:
             self.tree.insert('',tk.END,values=[item.name,item.phone,item.mobile,item.address],tags=item.city)
 
@@ -129,11 +133,13 @@ class Window(tk.Tk):
 
 def main():
     window = Window()
-    window.title("綠色餐廳")
+    window.title("綠色餐廳資訊")
     Image.open("./icon.png").save("icon.ico")
-    window.iconbitmap('icon.ico')
+    window.iconbitmap("icon.ico")
     window.mainloop()
 
 
 if __name__ == "__main__":
+    main()
+
     main()
